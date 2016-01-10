@@ -1,4 +1,5 @@
 require 'sinatra/base'
+require 'net/http'
 require 'pg'
 
 require_relative 'helpers'
