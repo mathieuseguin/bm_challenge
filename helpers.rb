@@ -12,11 +12,11 @@ module Sinatra
 
       def call_api(request)
         uri = build_uri(request)
-        http = Net::HTTP.new(uri.host, uri.port)
+        http = ::Net::HTTP.new(uri.host, uri.port)
         http.use_ssl = true
 
         method = request.env['REQUEST_METHOD']
-        klass = Object.const_get('Net::HTTP::' + method.split('_').map(&:capitalize).join)
+        klass = ::Object.const_get('Net::HTTP::' + method.split('_').map(&:capitalize).join)
 
         req = klass.new(uri.request_uri)
         req.basic_auth ENV['API_USER'], ENV['API_PASS']
