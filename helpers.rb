@@ -46,7 +46,7 @@ module Sinatra
       end
 
       def get_from_cache(url)
-        settings.conn.exec "SELECT * FROM cache WHERE url = '#{url}' LIMIT 1" do |result|
+        settings.conn.exec "SELECT * FROM cache WHERE url = '#{settings.conn.escape_string(url)}' LIMIT 1" do |result|
           return result.any? ? result.first.values_at('data').first : false
         end
       rescue
@@ -54,7 +54,12 @@ module Sinatra
       end
 
       def save_to_cache(url, data)
-        settings.conn.exec "INSERT INTO cache VALUES ('#{url}', '#{data}')"
+        begin
+          settings.conn.prepare('ins', 'INSERT INTO cache (url, data) VALUES ($1, $2)')
+        rescue PG::DuplicatePstatement
+        end
+
+        settings.conn.exec_prepared('ins', [url, data])
       rescue
         false
       end
