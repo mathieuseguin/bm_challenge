@@ -2,6 +2,7 @@ source 'https://rubygems.org'
 
 gem 'sinatra'
 gem 'puma'
+gem 'pg'
 
 group :development do
   gem 'guard'
@@ -16,4 +17,5 @@ end
 
 group :test do
   gem 'rack-test'
+  gem 'webmock'
 end

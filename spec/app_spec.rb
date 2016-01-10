@@ -27,4 +27,19 @@ describe 'StripeProxy' do
     expect(parsed_res).to be_kind_of(Hash)
     expect(parsed_res['id']).to eq('ch_17RIcn2eZvKYlo2CeB9DoePz')
   end
+
+  it 'should get data from the cache', :with_webmock do
+    ['/v1/events', '/v1/events/evt_17RIwm2eZvKYlo2CNnOoBa3B'].each do |path|
+      url = "https://#{ENV['API_USER']}:#{ENV['API_PASS']}@#{ENV['API_HOST']}#{path}"
+      stub = stub_request(:get, url).to_return(status: 200, body: '{ "json_test": true }', headers: {})
+
+      2.times do
+        get path
+        parsed_res = JSON.parse(last_response.body)
+        expect(parsed_res).to eq('json_test' => true)
+      end
+
+      expect(stub).to have_been_requested.once
+    end
+  end
 end

@@ -17,9 +17,13 @@ module Sinatra
 
         method = request.env['REQUEST_METHOD']
         klass = Object.const_get('Net::HTTP::' + method.split('_').map(&:capitalize).join)
+
         req = klass.new(uri.request_uri)
         req.basic_auth ENV['API_USER'], ENV['API_PASS']
-        req.set_form_data(normalize_params(request.env['rack.request.form_vars'])) if method == 'POST'
+
+        if method == 'POST'
+          req.set_form_data(normalize_params(request.env['rack.request.form_vars']))
+        end
 
         res = http.request(req)
 
@@ -28,6 +32,31 @@ module Sinatra
         else
           halt res.code.to_i, res.to_hash, res.body
         end
+      end
+
+      def cache(url)
+        data = get_from_cache(url)
+
+        unless data
+          data = yield
+          save_to_cache(url, data)
+        end
+
+        data
+      end
+
+      def get_from_cache(url)
+        settings.conn.exec "SELECT * FROM cache WHERE url = '#{url}' LIMIT 1" do |result|
+          return result.any? ? result.first.values_at('data').first : false
+        end
+      rescue
+        false
+      end
+
+      def save_to_cache(url, data)
+        settings.conn.exec "INSERT INTO cache VALUES ('#{url}', '#{data}')"
+      rescue
+        false
       end
 
       def normalize_params(params)
