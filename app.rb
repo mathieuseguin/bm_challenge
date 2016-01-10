@@ -13,11 +13,9 @@ class StripeProxy < Sinatra::Base
     content_type :json
   end
 
-  get '*' do
-    get_data(request)
-  end
-
-  post '*' do
-    post_data(request)
+  %w(get post delete).each do |method|
+    send(method, '*') do
+      call_api(request)
+    end
   end
 end

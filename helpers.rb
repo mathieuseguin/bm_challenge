@@ -10,39 +10,45 @@ module Sinatra
         )
       end
 
-      def get_data(request)
+      def call_api(request)
         uri = build_uri(request)
         http = Net::HTTP.new(uri.host, uri.port)
         http.use_ssl = true
 
-        req = Net::HTTP::Get.new(uri.request_uri)
+        method = request.env['REQUEST_METHOD']
+        klass = Object.const_get('Net::HTTP::' + method.split('_').map(&:capitalize).join)
+        req = klass.new(uri.request_uri)
         req.basic_auth ENV['API_USER'], ENV['API_PASS']
+        req.set_form_data(normalize_params(request.env['rack.request.form_vars'])) if method == 'POST'
 
         res = http.request(req)
 
         if res.code == '200'
           res.body
         else
-          halt res.code.to_i
+          halt res.code.to_i, res.to_hash, res.body
         end
       end
 
-      def post_data(request)
-        uri = build_uri(request)
-        http = Net::HTTP.new(uri.host, uri.port)
-        http.use_ssl = true
+      def normalize_params(params)
+        res = {}
 
-        req = Net::HTTP::Post.new(uri.request_uri)
-        req.set_form_data(request.params)
-        req.basic_auth ENV['API_USER'], ENV['API_PASS']
+        params.split('&').reject { |t| t =~ /]=$/ }.map do |param|
+          k, v = param.split('=')
+          v = URI.unescape(v)
 
-        res = http.request(req)
-
-        if res.code == '200'
-          res.body
-        else
-          halt res.code.to_i
+          if res[k].nil?
+            res[k] = v
+          else
+            if res[k].is_a?(Array)
+              res[k] << v
+            else
+              res[k] = [res[k], v]
+            end
+          end
         end
+
+        res
       end
     end
   end

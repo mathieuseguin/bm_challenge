@@ -1,6 +1,7 @@
 guard :rspec, cmd: 'bundle exec rspec' do
   watch(/.+\.rb$/)
   watch(/^(.+)\.rb$/) { |m| "spec/#{m[1]}_spec.rb" }
+  watch('helpers.rb') { 'spec/app_spec.rb' }
   watch(%r{^spec/.+_spec\.rb$})
   watch(%r{^lib/(.+)\.rb$}) { |m| "spec/lib/#{m[1]}_spec.rb" }
   watch('spec/spec_helper.rb') { 'spec' }
